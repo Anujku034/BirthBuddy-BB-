@@ -1,11 +1,31 @@
-import React from "react";
+import React,{useContext} from "react";
 import {
   Search,
   Bell,
-  ChevronDown,
+  LogOut,
 } from "lucide-react";
-
+import { useNavigate } from "react-router-dom";
+import{Dropdown,DropdownItem} from 'flowbite-react';
+import {AuthContext} from "../../context/AuthContext.jsx";
+import axios from "axios";
 function DashboardNavbar() {
+  const { setAccessToken } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const handleLogout = async() => {
+    try{
+      await axios.post(
+        "http://localhost:3000/api/auth/logout",
+        {},
+        {withCredentials: true}
+      );
+      setAccessToken(null);
+      navigate("/");
+
+    }
+    catch(error){
+      console.log(error);
+    }
+  }
   return (
     <header className="sticky top-0 z-40 h-[64px] border-b border-[#eceef5] bg-white/95 backdrop-blur-md">
 
@@ -59,43 +79,29 @@ function DashboardNavbar() {
 
           {/* Divider */}
 
-          <div className="h-[30px] w-px bg-[#e7e9f0]" />
-
-
-          {/* =================================================
-              PROFILE
-          ================================================= */}
-
-          <button
-            type="button"
-            className="group flex items-center gap-2 rounded-[9px] px-2 py-1 transition hover:bg-[#f7f5ff]"
-          >
-
-            {/* Avatar */}
-
-            <div className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-gradient-to-br from-[#77839b] to-[#526078] text-[12px] font-bold text-white shadow-sm">
-              A
-            </div>
-
-
-            {/* Name */}
-
-            <span className="hidden text-[11px] font-bold text-[#252c45] sm:block">
-              Anuj Kumar
-            </span>
-
-
-            {/* Arrow */}
-
-            <ChevronDown
-              size={14}
-              strokeWidth={2}
-              className="text-[#6f7890] transition-transform duration-200 group-hover:text-[#6338ef]"
-            />
-
-          </button>
-
+        <div className="h-[30px] w-px bg-[#e7e9f0]" />
+        <div className="flex items-center gap-2">
+          {/*icon*/}
+          <div className="flex justify-center items-center h-8 w-8 bg-black text-white rounded-full pb-0.5" >
+            <p>A</p>
+          </div>
+          <Dropdown label="Anuj kumar" dismissOnClick={false} className="rounded-xl border border-[#e5e7eb] bg-white shadow-xl shadow-purple-100 text-[#3c455e] focus:outline-none focus:ring-0 focus:border-transparent">
+            <DropdownItem
+              icon={LogOut}
+              className="group rounded-lg px-4 py-3 text-sm font-semibold text-[#ef405b] transition-all duration-200 hover:bg-red-50 hover:text-[#dc2649]"
+              onClick={handleLogout}
+            >
+              <span className="flex items-center gap-2">
+                Sign out
+              </span>
+            </DropdownItem>
+          </Dropdown>
         </div>
+
+
+          
+
+      </div>
 
       </div>
 

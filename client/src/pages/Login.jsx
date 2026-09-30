@@ -1,9 +1,11 @@
-import React,{useState} from "react";
+import React,{useState,useContext} from "react";
 import { Mail, Lock, Eye, ArrowRight, Gift, CalendarDays, Heart, Users } from "lucide-react";
 import axios from 'axios';
 import {NavLink,useNavigate} from 'react-router-dom';
+import {AuthContext} from "../context/AuthContext.jsx";
 const Login = () => {
 const navigate = useNavigate();
+const { setAccessToken } = useContext(AuthContext);
   // for field can't be empty error
  const[emailerror,setEmailError] = useState("");
  const[passworderror,setPasswordError] = useState("");
@@ -48,8 +50,14 @@ const navigate = useNavigate();
       {
         email: email.trim(),
         password: password,
+      },
+      {
+        withCredentials: true,
       }
     );
+    // access token
+    const accessToken = response.data.accessToken;
+    setAccessToken(accessToken);
     // SUCCESS RESPONSE
     setSucessResponse(
       response.data.message || "Login successful"

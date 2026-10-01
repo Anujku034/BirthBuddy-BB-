@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
 import{Dropdown,DropdownItem} from 'flowbite-react';
 import {AuthContext} from "../../context/AuthContext.jsx";
 import axios from "axios";
-function DashboardNavbar() {
+function DashboardNavbar({user}) {
   const { setAccessToken } = useContext(AuthContext);
   const navigate = useNavigate();
   const handleLogout = async() => {
@@ -26,6 +26,20 @@ function DashboardNavbar() {
       console.log(error);
     }
   }
+  const getInitials = (user) => {
+    if (!user) return "";
+
+    const words = user.trim().split(/\s+/);
+
+    if (words.length === 1) {
+      return words[0].charAt(0).toUpperCase();
+    }
+
+    return (
+      words[0].charAt(0) +" "+
+      words[words.length - 1].charAt(0)
+    ).toUpperCase();
+  };
   return (
     <header className="sticky top-0 z-40 h-[64px] border-b border-[#eceef5] bg-white/95 backdrop-blur-md">
 
@@ -82,10 +96,10 @@ function DashboardNavbar() {
         <div className="h-[30px] w-px bg-[#e7e9f0]" />
         <div className="flex items-center gap-2">
           {/*icon*/}
-          <div className="flex justify-center items-center h-8 w-8 bg-black text-white rounded-full pb-0.5" >
-            <p>A</p>
+          <div className="flex justify-center items-center h-9 w-9 bg-black text-white rounded-full pb-0.5 " >
+            <p>{getInitials(user)}</p>
           </div>
-          <Dropdown label="Anuj kumar" dismissOnClick={false} className="rounded-xl border border-[#e5e7eb] bg-white shadow-xl shadow-purple-100 text-[#3c455e] focus:outline-none focus:ring-0 focus:border-transparent">
+          <Dropdown label={user} dismissOnClick={false} className="rounded-xl border border-[#e5e7eb] bg-white shadow-xl shadow-purple-100 text-[#3c455e] focus:outline-none focus:ring-0 focus:border-transparent">
             <DropdownItem
               icon={LogOut}
               className="group rounded-lg px-4 py-3 text-sm font-semibold text-[#ef405b] transition-all duration-200 hover:bg-red-50 hover:text-[#dc2649]"

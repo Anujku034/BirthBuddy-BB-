@@ -19,6 +19,13 @@ const UserSchema = new Schema({
         minlength: 8,
         match: /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/,
     },
+    resetPasswordOtp:{
+        type: String,
+
+    },
+    resetPasswordOtpExpire: {
+        type: Date,
+    },
 
 });
 const User = mongoose.model("User", UserSchema);

@@ -15,7 +15,10 @@ import AllContact from "./components/Dashboard/AllContacts.jsx"
 import Message from "./components/Dashboard/Messages.jsx"
 import Settings from "./components/Dashboard/Settings.jsx"
 import UpcomingBirthdays  from "./components/Dashboard/UpcomingBirthdays.jsx"
-
+import ForgotPassword from "./pages/Auth/ForgotPassword";
+import VerifyOTP from "./pages/Auth/VerifyOTP";
+import ResetPassword from "./pages/Auth/ResetPassword";
+import PasswordResetSuccess from "./pages/Auth/PasswordResetSuccess";
 function App() {
   return (
     <Routes>
@@ -36,6 +39,10 @@ function App() {
           <Route path="/dashboard/settings" element={<Settings />} />
           <Route path="/dashboard/upcoming-birthdays" element={<UpcomingBirthdays />} />
       </Route>
+      <Route path="/forgot-password" element={<ForgotPassword/>}/>
+      <Route  path = "/verify-otp" element={<VerifyOTP />}/>
+      <Route path = "/reset-password" element={<ResetPassword />} />
+      <Route path = "/password-success" element={<PasswordResetSuccess />} />
 
       
     </Routes>

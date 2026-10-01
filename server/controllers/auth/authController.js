@@ -1,6 +1,8 @@
 const User = require('../../models/User');
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
+const sendResetPasswordOtp = require("../../services/emailService.js");
 const registerUser = async(req,res) => {
     try{
         const {fullName,email,password,confirmPassword} = req.body;
@@ -130,6 +132,7 @@ const refreshAccessToken = async(req,res) => {
   catch(error){
     return res.status(401).json({
       message: "Invalid or expired refresh token",
+      
     });
   }
 };
@@ -143,7 +146,122 @@ const logoutUser = (req,res) => {
     message: "Logout successful",
   });
 };
-const forgotPassword = (req,res) => {
-  
+const forgotPassword = async (req,res) => {
+  // first take the email
+  // verfiy is this email exist in my database or not
+  // if yes then send otp to the email
+  // ang navigate to the /verify-otp page 
+  try{
+    const{email} = req.body;
+    if(!email){
+      return res.status(400).json({
+        message: "Email is required",
+      });
+    }
+    const emailExist = await User.findOne({
+      email: email.trim().toLowerCase(),
+
+
+    });
+    if(!emailExist){
+      return res.status(404).json({
+        message: "Email does not exist",
+      });
+    }
+    // generate 6 digit otp
+    const otp = crypto.randomInt(100000,1000000).toString();
+    emailExist.resetPasswordOtp = otp;
+    emailExist.resetPasswordOtpExpire = Date.now() + 10 * 60 * 1000;
+    await emailExist.save();
+    // send otp to user's gmail
+    await sendResetPasswordOtp(
+      emailExist.email,
+      otp
+    );
+    // send response
+    return res.status(200).json({
+      message: "Otp send successfully",
+    });
+  }catch(error){
+    console.error("Forgot password error: ",error);
+    return res.status(500).json({
+      message: "Something went wrong. please try again.",
+    });
+  }
+};
+const verifyOtp = async(req,res) => {
+  try{
+    const {email, otp} = req.body;
+    // check required fields
+    if(!email || !otp){
+      return res.status(400).json({
+        message: "Email and Otp are required",
+      });
+    }
+    //find user
+    const user = await User.findOne({
+      email: email.trim().toLowerCase(),
+    });
+    if(!user){
+      return res.status(404).json({
+        message: "User not found",
+      });
+
+    }
+    // check otp expiration
+    if(user.resetPasswordOtpExpire < new Date()) {
+      return res.status(400).json({
+        message: "OTP has expired. Please request a new OTP",
+
+      });
+    }
+    // compare OTp
+    if(user.resetPasswordOtp !== otp){
+      return res.status(400).json({
+        message: "Invalid OTP",
+      });
+
+    }
+    // otp is correct
+    return res.status(200).json({
+      message:"OTP verified successfully",
+    })
+  }catch(error){
+    console.log("Verify OTP error: ",error);
+    return res.status(500).json({
+      message: "Something went wrong. Please try again.",
+    });
+  }
+};
+const resetPassword = async(req,res) => {
+  try{
+    const{email,password} = req.body;
+    if(!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required",
+      });
+    }
+    const user = await User.findOne({
+      email: email.trim().toLowerCase(),
+
+    });
+    if(!user){
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+    // we will hash the password before saving it to the db
+    const hashPassword = await bcrypt.hash(password,10);
+    user.password = hashPassword;
+    await user.save();
+    return res.status(200).json({
+      message: "Password reset successfully",
+    });
+  }catch(error){
+    console.log("Reset password error:",error);
+    return res.status(500).json({
+      message: "Something went wrong. Please try again"
+    })
+  }
 }
-module.exports = {registerUser,loginUser,refreshAccessToken,logoutUser};
+module.exports = {registerUser,loginUser,refreshAccessToken,logoutUser,forgotPassword,verifyOtp,resetPassword};

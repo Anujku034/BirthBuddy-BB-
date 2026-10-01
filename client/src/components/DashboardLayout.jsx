@@ -1,9 +1,11 @@
 import React from "react";
 import Sidebar from "./Dashboard/Sidebar.jsx";
 import Navbar from "./Dashboard/Navbar.jsx";
-import { Outlet } from "react-router-dom";
+import { Outlet,useLocation } from "react-router-dom";
 
 function DashboardLayout() {
+  const location = useLocation();
+  const user = location.state?.user;
   return (
     <div className="min-h-screen bg-[#f7f8ff]">
 
@@ -15,7 +17,7 @@ function DashboardLayout() {
 
       {/* ================= NAVBAR ================= */}
       <header className="fixed left-0 right-0 top-0 z-40 lg:left-[278px]">
-        <Navbar />
+        <Navbar user={user}/>
       </header>
 
 

@@ -3,6 +3,7 @@ import { Mail, Lock, Eye, ArrowRight, Gift, CalendarDays, Heart, Users } from "l
 import axios from 'axios';
 import {NavLink,useNavigate} from 'react-router-dom';
 import {AuthContext} from "../context/AuthContext.jsx";
+import axiosInstance from "../api/axiosInstance";
 const Login = () => {
 const navigate = useNavigate();
 const { setAccessToken } = useContext(AuthContext);
@@ -46,7 +47,7 @@ const { setAccessToken } = useContext(AuthContext);
   }
   // is all input field is entered/ ticked by the user.
   try{
-    const response = await axios.post("http://localhost:3000/api/auth/login",
+    const response = await axiosInstance.post("auth/login",
       {
         email: email.trim(),
         password: password,
@@ -63,7 +64,11 @@ const { setAccessToken } = useContext(AuthContext);
       response.data.message || "Login successful"
     );
     setTimeout(() => {
-      navigate("/dashboard");
+      navigate("/dashboard",{
+        state:{
+          user: response.data.user.fullName,
+        }
+      });
     }, 1500);
   }
   catch(error){
@@ -308,9 +313,9 @@ const { setAccessToken } = useContext(AuthContext);
                     Keep me signed in
                   </span>
                 </label>
-                <button className="text-sm font-semibold text-blue-600 hover:text-pink-500 transition">
+                <NavLink to="/forgot-password" className="text-sm font-semibold text-blue-600 hover:text-pink-500 transition">
                   Forgot password?
-                </button>
+                </NavLink>
 
               </div>
               {!isticked && isclicked && (

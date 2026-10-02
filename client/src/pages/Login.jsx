@@ -6,7 +6,7 @@ import {AuthContext} from "../context/AuthContext.jsx";
 import axiosInstance from "../api/axiosInstance";
 const Login = () => {
 const navigate = useNavigate();
-const { setAccessToken } = useContext(AuthContext);
+const { setAccessToken,setUser } = useContext(AuthContext);
   // for field can't be empty error
  const[emailerror,setEmailError] = useState("");
  const[passworderror,setPasswordError] = useState("");
@@ -24,6 +24,7 @@ const { setAccessToken } = useContext(AuthContext);
  async function handlelogin(){
   // if email/password is not correct format.
   // if email/password field is empty.
+  
   let hasError = false;
   if(email.trim() === ""){
     setEmailError("Email is required");
@@ -63,7 +64,10 @@ const { setAccessToken } = useContext(AuthContext);
     setSucessResponse(
       response.data.message || "Login successful"
     );
+    
+    setUser(response.data.user.fullName)
     setTimeout(() => {
+      
       navigate("/dashboard",{
         state:{
           user: response.data.user.fullName,

@@ -9,8 +9,9 @@ import { useNavigate } from "react-router-dom";
 import{Dropdown,DropdownItem} from 'flowbite-react';
 import {AuthContext} from "../../context/AuthContext.jsx";
 import axios from "axios";
-function DashboardNavbar({user}) {
-  const { setAccessToken } = useContext(AuthContext);
+
+function DashboardNavbar() {
+  const { setAccessToken,user } = useContext(AuthContext);
   const navigate = useNavigate();
   const handleLogout = async() => {
     try{

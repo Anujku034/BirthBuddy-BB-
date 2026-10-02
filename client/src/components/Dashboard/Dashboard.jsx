@@ -1,4 +1,4 @@
-import React from "react";
+import React,{useContext} from "react";
 import {
   CalendarDays,
   Cake,
@@ -12,8 +12,8 @@ import {
 
 import dashboardHero from "../../assets/dashboard/dashboardHero.png";
 import { FaWhatsapp } from "react-icons/fa";
-
-
+import { useOutletContext } from "react-router-dom";
+import {AuthContext} from "../../context/AuthContext.jsx";
 // ======================================================
 // STATIC DATA
 // Later this data will come from backend/API
@@ -81,6 +81,9 @@ const recentMessages = [
 // ======================================================
 
 function Dashboard() {
+  const { user } = useContext(AuthContext);
+  const firstName = user?.trim().split(/\s+/)[0];
+
   return (
     <div className="min-h-screen bg-[#f8f9ff] px-4 py-5 sm:px-6 lg:px-8">
 
@@ -106,7 +109,7 @@ function Dashboard() {
 
             <h1 className="text-[32px] font-extrabold leading-tight tracking-tight text-[#101631] sm:text-[40px] lg:text-[46px]">
 
-              Welcome Back, Anuj!{" "}
+              Welcome Back, {firstName}!{" "}
 
               <span className="inline-block">
                 👋

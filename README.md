@@ -83,3 +83,20 @@ Forgot Password
 OTP Verification
    ↓
 Reset Password
+
+### 📅 Day 4 — Authentication & Add Person Integration
+**Date:** October 2, 2026
+
+- Connected `AuthContext` with the dashboard authentication flow
+- Stored the logged-in user's access token and user information in `AuthContext`
+- Implemented protected Add Person API using JWT authentication
+- Added Bearer access token to the Add Person request
+- Implemented access-token expiry handling
+- Added refresh-token flow to generate a new access token when the access token expires
+- Retried the Add Person request automatically using the new access token
+- Added session-expiry handling to redirect the user to the Login page
+- Integrated profile photo upload using `FormData` and Multer
+- Connected the Add Person frontend form with the backend API
+- Fixed authenticated user identification using `req.user.userId`
+
+**Commit:** `add person API`

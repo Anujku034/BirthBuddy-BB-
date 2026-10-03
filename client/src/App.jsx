@@ -33,7 +33,7 @@ function App() {
       <Route path="/signup" element={<Register />}/>
       <Route element ={<DashboardLayout />} >
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/add-person" element={<AddPerson />} />
+          <Route path="/dashboard/add-person/:id?" element={<AddPerson />} />
           <Route path="/dashboard/contacts" element={<AllContact />} />
           <Route path="/dashboard/messages" element={<Message />} />
           <Route path="/dashboard/settings" element={<Settings />} />

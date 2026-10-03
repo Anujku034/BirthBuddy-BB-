@@ -1,4 +1,4 @@
-import React, { useState,useContext } from "react";
+import React, { useState,useContext,useEffect } from "react";
 import {
   Home,
   ChevronRight,
@@ -15,17 +15,103 @@ import axios from "axios";
 import addPersonHero from "../../assets/dashboard/addPersonHero.png";
 import { useNavigate } from "react-router-dom";
 import {AuthContext} from "../../context/AuthContext";
-
+import {useParams} from "react-router-dom";
 function AddPerson() {
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [profilePhoto, setProfilePhoto] = useState(null);
+  const [existingPhoto, setExistingPhoto] = useState("");
   const [Notes, setNotes] = useState("");
   const [sendReminder, setSendReminder] = useState(false);
   const [customMessage, setCustomMessage] = useState("");
   const navigate = useNavigate();
   const{accessToken,setAccessToken} = useContext(AuthContext);
+  const[successMessage,setSuccessMessage] = useState("");
+  const[serverError,setServerError] = useState("");
+  const{id} = useParams();
+  useEffect(() => {
+    if(!id || !accessToken) return ;
+    const getPerson = async () => {
+      try{
+        const response = await axios.get(
+          `http://localhost:3000/api/persons/${id}`,
+          {
+            headers:{
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        const person = response.data.person;
+        console.log("Person:",response.data.person);
+        setFullName(person.fullName || "");
+        setPhoneNumber(person.phone || "");
+        setDateOfBirth(
+          person.dateOfBirth
+            ? new Date(person.dateOfBirth).toISOString().split("T")[0]
+            : ""
+        );
+        setNotes(person.notes || "");
+        setSendReminder(person.sendWhatsAppReminder || false);
+        setCustomMessage(person.customMessage || "");
+        setExistingPhoto(response.data.person.profilePhoto || "");
+      }
+      catch(error){
+        console.log("GET PERSON ERROR:",error);
+        //Access token expired
+        if(error.response?.status === 401){
+          try{
+            // get new access Token
+            const refreshResponse = await axios.post(
+              "http://localhost:3000/api/auth/refresh",
+              {},
+              {
+                withCredentials: true,
+              }
+            );
+            const newAccessToken = refreshResponse.data.accessToken;
+            //store new access token
+            setAccessToken(newAccessToken);
+            // retry get person request
+            const retryResponse = await axios.get(
+              `http://localhost:3000/api/persons/${id}`,
+              {
+                headers:{
+                  Authorization: `Bearer ${newAccessToken}`,
+                },
+              }
+            );
+            
+            const person = retryResponse.data.person;
+            console.log("Person after refresh:", person);
+            setFullName(person.fullName || "");
+            setPhoneNumber(person.phone || "");
+            setDateOfBirth(
+              person.dateOfBirth
+                ? new Date(person.dateOfBirth).toISOString().split("T")[0]
+                : ""
+            );
+            setNotes(person.notes || "");
+            setSendReminder(person.sendWhatsAppReminder || false);
+            setCustomMessage(person.customMessage || "");
+            setExistingPhoto(response.data.person.profilePhoto || "");
+
+          }catch(refreshError){
+            console.log("REFRESH TOKEN ERROR:",refreshError);
+            if(refreshError.response?.status === 401){
+              alert("Session expired. Please login again");
+              setTimeout(() => {
+                navigate("/login");
+              },2000);
+            }
+          }
+        }
+      }
+    };
+    getPerson();
+
+  },[id,accessToken]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -44,7 +130,17 @@ function AddPerson() {
 
     console.log([...formData.entries()]);
     try{
-        const response = await axios.post(
+        const response = id 
+        ? await axios.put(
+            `http://localhost:3000/api/persons/${id}`,
+            formData,
+            {
+              headers:{
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          )
+        : await axios.post(
         "http://localhost:3000/api/add-person",
         formData,{
           headers: {
@@ -54,6 +150,10 @@ function AddPerson() {
         }
       );
       console.log(response.data);
+      setSuccessMessage(id ? "✓ Person updated successfully" :"✓ Person added successfully")
+      setTimeout(() => {
+        navigate("/dashboard/contacts");
+      },2000);
     }catch(error){
       if(error.response?.status === 401){
         console.log("Access token expired");
@@ -69,7 +169,17 @@ function AddPerson() {
           setAccessToken(newAccessToken);
           console.log("New access token", newAccessToken);
           // retry add person request
-          const retryResponse = await axios.post(
+          const retryResponse = id 
+          ? await axios.put(
+            `http://localhost:3000/api/persons/${id}`,
+            formData,
+            {
+              headers: {
+                Authorization: `Bearer ${newAccessToken}`,
+              },
+            }
+          )
+          :await axios.post(
             "http://localhost:3000/api/add-person",
             formData,
             {
@@ -80,10 +190,14 @@ function AddPerson() {
             }
           );
           console.log("Person added:",retryResponse.data);
+          setSuccessMessage(id ? "✓ Person updated successfully" : "✓ Person added successfully")
+          setTimeout(() => {
+            navigate("/dashboard/contacts");
+          },2000);
         }
         catch(refreshError){
           if(refreshError.response?.status === 401){
-            alert("Session expired. Please login again.");
+            setServerError("Session expired. Please login again.");
             setTimeout(() => {
               navigate("/login");
 
@@ -167,6 +281,30 @@ function AddPerson() {
 
           {/* ================= RIGHT FORM CARD ================= */}
           <section className="rounded-[18px] border border-[#e8e9f2] bg-white px-4 py-4 shadow-[0_8px_30px_rgba(35,45,90,0.06)] sm:px-6 sm:py-5">
+             {/* ================= SUCCESS / ERROR MESSAGE ================= */}
+              {successMessage && (
+                <div className="mt-4 flex items-center gap-2 rounded-[8px] border border-[#b7ebd0] bg-[#ecfaf4] px-3 py-2.5">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#20c978] text-[11px] font-bold text-white">
+                    ✓
+                  </div>
+
+                  <p className="text-[11px] font-semibold text-[#168653]">
+                    {successMessage}
+                  </p>
+                </div>
+              )}
+
+              {serverError && (
+                <div className="mt-4 flex items-center gap-2 rounded-[8px] border border-[#fecaca] bg-[#fff1f2] px-3 py-2.5">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#ef4444] text-[11px] font-bold text-white">
+                    !
+                  </div>
+
+                  <p className="text-[11px] font-semibold text-[#dc2626]">
+                    {serverError}
+                  </p>
+                </div>
+              )}
 
             {/* ================= PERSON DETAILS ================= */}
             <div className="mb-4">
@@ -281,6 +419,26 @@ function AddPerson() {
                         </div>
 
                       </div>
+                    ) : existingPhoto ? (
+                      <div className="flex items-center gap-2">
+
+                      <img
+                        src={existingPhoto}
+                        alt="Profile preview"
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+
+                      <div>
+                        <p className="max-w-[150px] truncate text-[10px] font-bold text-[#252b45]">
+                          Existing photo
+                        </p>
+
+                        <p className="text-[8px] text-[#8c95aa]">
+                          Click to change photo
+                        </p>
+                      </div>
+
+                    </div>
                     ) : (
                       <>
                         <div className="relative mb-1 flex h-[31px] w-[31px] items-center justify-center rounded-full bg-[#e5e7f2]">
@@ -444,7 +602,6 @@ function AddPerson() {
               </div>
 
             </div>
-
             {/* ================= BUTTONS ================= */}
             <div className="mt-4 flex justify-end gap-3">
 

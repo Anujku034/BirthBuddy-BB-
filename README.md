@@ -101,3 +101,18 @@ Forgot Password
 OTP Verification
    ↓
 Reset Password
+
+
+### Day 5 — Cloudinary Image Storage & Profile Photo Retrieval — October 3, 2026
+
+- Integrated Cloudinary for profile photo storage
+- Configured Cloudinary with Multer using `multer-storage-cloudinary`
+- Profile photos are now uploaded directly to Cloudinary
+- Stored Cloudinary image URLs in MongoDB
+- Updated Add Person API to save Cloudinary profile photo URLs
+- Updated Edit Person API to handle new profile photos
+- Preserved the existing profile photo when no new image is selected
+- Added existing Cloudinary photo retrieval in the Edit Person form
+- Added profile photo preview for both existing and newly selected images
+- Tested profile photo upload and retrieval successfully
+- Commit: `integrate cloudinary image storage`

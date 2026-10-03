@@ -26,19 +26,15 @@ The project is being developed step-by-step, with daily progress documented thro
 ### 📅 Day 2 — Authentication & Forgot Password Flow
 **Date:** September 30, 2026
 
-- Implemented user registration
-- Implemented user login
+- Implemented user registration and login
 - Added password hashing using bcrypt
 - Implemented JWT authentication
 - Added access token and refresh token
 - Added HTTP-only refresh token cookie
 - Implemented logout functionality
-- Implemented forgot password
-- Added OTP generation
+- Implemented forgot password with OTP
 - Added OTP email functionality using Nodemailer
-- Implemented OTP verification
-- Implemented password reset
-- Added password validation
+- Implemented OTP verification and password reset
 - Connected frontend authentication with backend APIs
 - Added authentication error handling
 
@@ -65,24 +61,6 @@ The project is being developed step-by-step, with daily progress documented thro
 
 ---
 
-### 📅 Day 4 — Add Person API
-**Date:** October 2, 2026
-
-- Connected `AuthContext` with the Add Person functionality
-- Implemented protected Add Person API using JWT authentication
-- Added Bearer access token to the Add Person request
-- Implemented access-token expiry handling
-- Added refresh-token flow when the access token expires
-- Retried the Add Person request using the new access token
-- Added session-expiry handling to redirect the user to the Login page
-- Integrated profile photo upload using `FormData` and Multer
-- Connected the Add Person frontend form with the backend API
-- Fixed authenticated user identification using `req.user.userId`
-
-**Commit:** `add person api`
-
----
-
 ## 🔐 Authentication Flow
 
 ```text
@@ -96,23 +74,52 @@ Access Token + Refresh Token
    ↓
 Dashboard
    ↓
-Forgot Password
+Protected API Request
    ↓
-OTP Verification
+Access Token Validation
    ↓
-Reset Password
+Token Expired?
+   ↓
+Refresh Token
+   ↓
+New Access Token
+   ↓
+Retry Request
+```
+### 📅 Day 4 — Add Person API
 
+**Date:** October 2, 2026
 
-### Day 5 — Cloudinary Image Storage & Profile Photo Retrieval — October 3, 2026
+* Connected `AuthContext` with Add Person functionality
+* Implemented protected Add Person API using JWT authentication
+* Added Bearer access token to API requests
+* Implemented access-token expiry handling
+* Added refresh-token flow when the access token expires
+* Added automatic request retry with the new access token
+* Added session-expiry handling and Login redirect
+* Integrated profile photo upload using `FormData` and Multer
+* Connected Add Person frontend with backend API
+* Fixed authenticated user identification using `req.user.userId`
+* Implemented Get All Persons API
+* Implemented Get Person By ID API
+* Implemented Delete Person API
+* Implemented Edit/Update Person API
 
-- Integrated Cloudinary for profile photo storage
-- Configured Cloudinary with Multer using `multer-storage-cloudinary`
-- Profile photos are now uploaded directly to Cloudinary
-- Stored Cloudinary image URLs in MongoDB
-- Updated Add Person API to save Cloudinary profile photo URLs
-- Updated Edit Person API to handle new profile photos
-- Preserved the existing profile photo when no new image is selected
-- Added existing Cloudinary photo retrieval in the Edit Person form
-- Added profile photo preview for both existing and newly selected images
-- Tested profile photo upload and retrieval successfully
-- Commit: `integrate cloudinary image storage`
+**Commit:** `add person api`
+
+### 📅 Day 5 — Cloudinary Image Storage & Profile Photo Retrieval
+
+**Date:** October 3, 2026
+
+* Integrated Cloudinary for profile photo storage
+* Configured Cloudinary with Multer
+* Uploaded profile photos directly to Cloudinary
+* Stored Cloudinary image URLs in MongoDB
+* Updated Add Person API for Cloudinary image storage
+* Updated Edit Person API to handle profile photos
+* Preserved existing profile photo when no new photo is selected
+* Added existing Cloudinary photo retrieval in Edit Person
+* Added preview for existing and newly selected photos
+* Tested profile photo upload and retrieval successfully
+
+**Commit:** `integrate cloudinary image storage`

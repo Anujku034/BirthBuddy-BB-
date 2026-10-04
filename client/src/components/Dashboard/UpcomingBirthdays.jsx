@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState,useEffect,useContext } from "react";
+
 import {
   CalendarDays,
   Users,
@@ -8,89 +9,199 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  MessageCircle,
   MoreVertical,
-  Heart,
   Sparkles,
 } from "lucide-react";
+
 import { FaWhatsapp } from "react-icons/fa";
 
 import upcomingBirthdaysHero from "../../assets/dashboard/upcomingBirthdaysHero.png";
-
-
-// ============================================================
-// STATIC DATA
-// ============================================================
-
-const birthdays = [
-  {
-    name: "Rahul Sharma",
-    relation: "College Friend",
-    date: "12 September 2025",
-    days: "Today",
-    message: "Send your wishes now!",
-    today: true,
-  },
-  {
-    name: "Priya Singh",
-    relation: "School Friend",
-    date: "15 September 2025",
-    days: "3 days left",
-    message: "Make their day special! 🎁",
-  },
-  {
-    name: "Amit Verma",
-    relation: "Colleague",
-    date: "20 September 2025",
-    days: "8 days left",
-    message: "Send a wonderful year! 🎉",
-  },
-  {
-    name: "Sneha Patel",
-    relation: "Family",
-    date: "25 September 2025",
-    days: "13 days left",
-    message: "Don't forget to send wishes! ❤️",
-  },
-  {
-    name: "Vikram Gupta",
-    relation: "Gym Buddy",
-    date: "02 October 2025",
-    days: "20 days left",
-    message: "Plan something special! 🎉",
-  },
-  {
-    name: "Neha Sharma",
-    relation: "Cousin",
-    date: "10 October 2025",
-    days: "28 days left",
-    message: "Birthdays make life brighter! ✨",
-  },
-];
-
-const weekBirthdays = [
-  {
-    name: "Rahul Sharma",
-    date: "12 September 2025",
-    days: "Today",
-    today: true,
-  },
-  {
-    name: "Priya Singh",
-    date: "15 September 2025",
-    days: "3 days left",
-  },
-];
-
-
-// ============================================================
-// MAIN COMPONENT
-// ============================================================
+import axios from "axios";
+import { NavLink, useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext";
+const formatBirthdayDate = (date) => {
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};
+// calculating upcoming birthdays
+const getNextBirthday = (dateOfBirth) => {
+  const today = new Date();
+  const birthDate = new Date(dateOfBirth);
+  const birthday = new Date(
+    today.getFullYear(),
+    birthDate.getMonth(),
+    birthDate.getDate()
+  );
+  birthday.setHours(0,0,0,0);
+  const todayDate = new Date(today);
+  todayDate.setHours(0,0,0,0);
+  if(birthday < todayDate){
+    birthday.setFullYear(today.getFullYear() + 1);
+  }
+  return birthday;
+}
+// convert the api data into birthday data
+const getDaysLeft = (birthday) => {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const birthdayDate = new Date(birthday);
+  birthdayDate.setHours(0,0,0,0);
+  const difference = birthdayDate -  today;
+  return Math.ceil(difference/(1000 * 60 * 60 * 24));
+   
+};
+const getBirthdayStatus = (days) => {
+  if(days === 0) return "Today";
+  if(days === 1) return "Tomorrow";
+  return `In ${days} days`;
+};
 
 function UpcomingBirthdays() {
+  const[contacts,setContacts] = useState([]);
+  const[loading,setLoading] = useState(true);
+  const[serverError,setServerError] = useState("");
+  const{accessToken, setAccessToken} = useContext(AuthContext);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState("All Time");
+  const [sortBy, setSortBy] = useState("Nearest Birthday");
+  const navigate = useNavigate();
+  
+  
+  const upcomingBirthdays = contacts
+  .map((person) => {
+    const nextBirthday = getNextBirthday(person.dateOfBirth);
+    const days = getDaysLeft(nextBirthday);
+    return{
+      ...person,
+      name: person.fullName,
+      date: formatBirthdayDate(nextBirthday),
+      days: getBirthdayStatus(days),
+      daysLeft: days,
+      today: days === 0,
+      message: person.customMessage || "Make their birthday special! 🎉",
+      profilePhoto: person.profilePhoto || null,
+      nextBirthday,
+    };
+  })
+  .sort((a,b) => a.nextBirthday - b.nextBirthday);
+  //const birthdays = upcomingBirthdays;
+  // this week list
+  const weekBirthdays = upcomingBirthdays.filter(
+    (person) => person.daysLeft >= 0 && person.daysLeft <= 7
+  );
+  
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const todayBirthdays = upcomingBirthdays.filter(
+    (person) => person.daysLeft === 0
+  );
+  const thisweekBirthdays = upcomingBirthdays.filter(
+    (person) => person.daysLeft >= 0 && person.daysLeft <= 7
+  );
+  const thisMonthBirthdays = upcomingBirthdays.filter((person) =>{
+    const birthdayMonth = person.nextBirthday.getMonth();
+    return birthdayMonth === today.getMonth();
+  });
+  const filteredBirthdays = upcomingBirthdays
+  .filter((person) => {
+    const matchesSearch = person.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+
+    const days = person.daysLeft;
+
+    let matchesDate = true;
+
+    if (dateFilter === "Today") {
+      matchesDate = days === 0;
+    }
+
+    if (dateFilter === "This Week") {
+      matchesDate = days >= 0 && days <= 7;
+    }
+
+    if (dateFilter === "This Month") {
+      matchesDate =
+        person.nextBirthday.getMonth() === today.getMonth();
+    }
+
+    return matchesSearch && matchesDate;
+  })
+  .sort((a, b) => {
+    if (sortBy === "Nearest Birthday") {
+      return a.nextBirthday - b.nextBirthday;
+    }
+
+    if (sortBy === "Farthest Birthday") {
+      return b.nextBirthday - a.nextBirthday;
+    }
+
+    return 0;
+  });
+  const birthdays = filteredBirthdays;
+  const getAllPersons = async() => {
+    try{
+      setLoading(true);
+      setServerError("");
+      const response = await axios.get(
+        "http://localhost:3000/api/persons",
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        }
+      );
+      setContacts(response.data.persons);
+
+    }catch(error){
+      // if access token expire
+      if(error.response?.status === 401) {
+        try{
+          const refreshResponse = await axios.post(
+            "http://localhost:3000/api/auth/refresh",
+            {},
+            {
+              withCredentials: true,
+            }
+          );
+          const newAccessToken = refreshResponse.data.accessToken;
+          setAccessToken(newAccessToken);
+          // retry
+          const retryResponse = await axios.get(
+            "http://localhost:3000/api/persons",
+            {
+              headers: {
+                Authorization: `Bearer ${newAccessToken}`,
+              },
+            }
+          );
+          setContacts(retryResponse.data.persons);
+        }catch(refreshError) {
+          if(refreshError.response?.status === 401) {
+            alert("Session expired. Please login again");
+            setTimeout(() => {
+              navigate("/login");
+            },2000);
+          }
+        }
+      }else{
+        console.log("GET PERSONS ERROR:", error);
+        setServerError("Failed to load birthdays.");
+      }
+    } finally{
+      setLoading(false);
+    }
+  }
+  useEffect(() => {
+    if(accessToken) {
+      getAllPersons();
+    }
+  },[accessToken]);
   return (
     <div className="min-h-screen bg-[#f7f8ff] px-3 py-4 sm:px-5 lg:px-7">
-
       <div className="mx-auto max-w-[1500px]">
 
         {/* ====================================================
@@ -104,7 +215,6 @@ function UpcomingBirthdays() {
           <div className="absolute -left-20 -top-24 h-56 w-56 rounded-full bg-[#ddc9ff]/40 blur-3xl" />
 
           <div className="absolute right-[35%] -top-20 h-52 w-52 rounded-full bg-[#ffd9ed]/30 blur-3xl" />
-
 
           {/* Heading */}
 
@@ -130,7 +240,6 @@ function UpcomingBirthdays() {
 
           </div>
 
-
           {/* Hero image */}
 
           <img
@@ -141,7 +250,6 @@ function UpcomingBirthdays() {
 
         </section>
 
-
         {/* ====================================================
             STAT CARDS
         ==================================================== */}
@@ -150,17 +258,17 @@ function UpcomingBirthdays() {
 
           <StatCard
             icon={Users}
-            value="6"
+            value={upcomingBirthdays.length}
             label="Upcoming"
             title="All"
             iconBg="bg-[#eee9ff]"
             iconColor="text-[#6338ef]"
-            active
+            
           />
 
           <StatCard
             icon={CalendarDays}
-            value="1"
+            value={todayBirthdays.length}
             label="Birthday"
             title="Today"
             iconBg="bg-[#ffecef]"
@@ -169,7 +277,7 @@ function UpcomingBirthdays() {
 
           <StatCard
             icon={CalendarDays}
-            value="2"
+            value={thisweekBirthdays.length}
             label="Birthdays"
             title="This Week"
             iconBg="bg-[#eeeaff]"
@@ -178,7 +286,7 @@ function UpcomingBirthdays() {
 
           <StatCard
             icon={Gift}
-            value="4"
+            value={thisMonthBirthdays.length}
             label="Birthdays"
             title="This Month"
             iconBg="bg-[#fff1dc]"
@@ -187,13 +295,11 @@ function UpcomingBirthdays() {
 
         </section>
 
-
         {/* ====================================================
-            MAIN GRID
+            MAIN CONTENT
         ==================================================== */}
 
         <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1fr_275px]">
-
 
           {/* ==================================================
               LEFT SIDE
@@ -201,7 +307,7 @@ function UpcomingBirthdays() {
 
           <div>
 
-            {/* Search / Filters */}
+            {/* Search and Filters */}
 
             <div className="mb-2 flex flex-col gap-2 rounded-[10px] border border-[#e5e7ef] bg-white p-2 shadow-[0_4px_15px_rgba(35,45,90,0.04)] sm:flex-row">
 
@@ -218,69 +324,77 @@ function UpcomingBirthdays() {
                   type="text"
                   placeholder="Search by name..."
                   className="h-[32px] w-full rounded-[6px] border border-[#e0e3eb] bg-white pl-9 pr-3 text-[9px] font-medium text-[#59647d] outline-none placeholder:text-[#9aa3b6] focus:border-[#7550ee]"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+
                 />
 
               </div>
 
-
               {/* Time Filter */}
 
-              <button
-                type="button"
-                className="flex h-[32px] min-w-[115px] items-center justify-between rounded-[6px] border border-[#e0e3eb] px-3 text-[9px] font-semibold text-[#5d6780]"
-              >
+             <div className="relative">
+                <select
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="h-[32px] min-w-[115px] appearance-none rounded-[6px] border border-[#e0e3eb] bg-white px-3 pr-7 text-[9px] font-semibold text-[#5d6780] outline-none focus:border-[#7550ee]"
+                >
+                  <option value="All Time">All Time</option>
+                  <option value="Today">Today</option>
+                  <option value="This Week">This Week</option>
+                  <option value="This Month">This Month</option>
+                </select>
 
-                <span className="flex items-center gap-1.5">
+                <ChevronDown
+                  size={11}
+                  className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7c86a0]"
+                />
+              </div>
+              {/* Sort Filter */}
 
-                  <CalendarDays size={12} />
+              <div className="relative">
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="h-[32px] min-w-[140px] appearance-none rounded-[6px] border border-[#e0e3eb] bg-white px-3 pr-7 text-[9px] font-semibold text-[#5d6780] outline-none focus:border-[#7550ee]"
+                >
+                  <option value="Nearest Birthday">
+                    Nearest Birthday
+                  </option>
 
-                  All Time
+                  <option value="Farthest Birthday">
+                    Farthest Birthday
+                  </option>
+                </select>
 
-                </span>
-
-                <ChevronDown size={11} />
-
-              </button>
-
-
-              {/* Sort */}
-
-              <button
-                type="button"
-                className="flex h-[32px] min-w-[120px] items-center justify-between rounded-[6px] border border-[#e0e3eb] px-3 text-[9px] font-semibold text-[#5d6780]"
-              >
-
-                <span className="flex items-center gap-1.5">
-
-                  <Sparkles size={11} />
-
-                  Sort by Date
-
-                </span>
-
-                <ChevronDown size={11} />
-
-              </button>
-
+                <ChevronDown
+                  size={11}
+                  className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[#7c86a0]"
+                />
+              </div>
             </div>
 
+            {/* ==================================================
+                UPCOMING BIRTHDAYS
+            ================================================== */}
 
-            {/* Birthday List */}
+            <div className="max-h-[400px] overflow-y-auto overflow-x-hidden rounded-[10px] border border-[#e5e7ef] bg-white shadow-[0_5px_20px_rgba(35,45,90,0.05)]">
 
-            <div className="overflow-hidden rounded-[10px] border border-[#e5e7ef] bg-white shadow-[0_5px_20px_rgba(35,45,90,0.05)]">
-
-              {birthdays.map((person, index) => (
-                <BirthdayRow
-                  key={person.name}
-                  person={person}
-                  isLast={index === birthdays.length - 1}
-                />
-              ))}
+              {birthdays.length > 0 ? (
+                birthdays.map((person, index) => (
+                  <BirthdayRow
+                    key={person._id || person.name}
+                    person={person}
+                    isLast={index === birthdays.length - 1}
+                  />
+                ))
+              ) : (
+                <EmptyBirthdayState />
+              )}
 
             </div>
 
           </div>
-
 
           {/* ==================================================
               RIGHT SIDE
@@ -288,17 +402,11 @@ function UpcomingBirthdays() {
 
           <div className="space-y-3">
 
-
-            {/* =================================================
-                CALENDAR
-            ================================================= */}
+            {/* Calendar */}
 
             <CalendarCard />
 
-
-            {/* =================================================
-                THIS WEEK
-            ================================================= */}
+            {/* Upcoming This Week */}
 
             <div className="rounded-[10px] border border-[#e5e7ef] bg-white p-3 shadow-[0_5px_20px_rgba(35,45,90,0.05)]">
 
@@ -322,25 +430,37 @@ function UpcomingBirthdays() {
                 </div>
 
                 <span className="rounded-[5px] bg-[#f0f1f7] px-2 py-1 text-[8px] font-bold text-[#68738d]">
-                  2
+                  {weekBirthdays.length}
                 </span>
 
               </div>
 
+              {/* 400px scrolling */}
 
-              {weekBirthdays.map((person) => (
-                <WeekBirthday
-                  key={person.name}
-                  person={person}
-                />
-              ))}
+              <div className="max-h-[100px] overflow-y-auto overflow-x-hidden">
+
+                {weekBirthdays.length > 0 ? (
+                  weekBirthdays.map((person) => (
+                    <WeekBirthday
+                      key={person._id || person.name}
+                      person={person}
+                    />
+                  ))
+                ) : (
+                  <div className="flex min-h-[100px] items-center justify-center">
+
+                    <p className="text-center text-[9px] text-[#8c95aa]">
+                      No birthdays this week
+                    </p>
+
+                  </div>
+                )}
+
+              </div>
 
             </div>
 
-
-            {/* =================================================
-                QUOTE
-            ================================================= */}
+            {/* Quote */}
 
             <div className="relative overflow-hidden rounded-[10px] border border-[#dfd2ff] bg-gradient-to-br from-[#f8f3ff] to-[#eee5ff] p-3">
 
@@ -351,12 +471,17 @@ function UpcomingBirthdays() {
               </span>
 
               <p className="relative -mt-1 ml-5 font-serif text-[10px] italic leading-[15px] text-[#4b5270]">
+
                 Every birthday is a new beginning
+
                 <br />
+
                 filled with love, hope and happiness.
+
                 <span className="ml-1">
                   ❤️
                 </span>
+
               </p>
 
             </div>
@@ -366,11 +491,9 @@ function UpcomingBirthdays() {
         </section>
 
       </div>
-
     </div>
   );
 }
-
 
 // ============================================================
 // STAT CARD
@@ -406,7 +529,6 @@ function StatCard({
 
       </div>
 
-
       <div>
 
         <div className="flex items-center gap-1.5">
@@ -435,6 +557,38 @@ function StatCard({
   );
 }
 
+// ============================================================
+// EMPTY BIRTHDAY STATE
+// ============================================================
+
+function EmptyBirthdayState() {
+  return (
+    <div className="flex min-h-[180px] items-center justify-center">
+
+      <div className="text-center">
+
+        <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#eee9ff]">
+
+          <Cake
+            size={18}
+            className="text-[#6338ef]"
+          />
+
+        </div>
+
+        <p className="text-[11px] font-bold text-[#252b45]">
+          No upcoming birthdays
+        </p>
+
+        <p className="mt-1 text-[9px] text-[#8c95aa]">
+          Your upcoming birthdays will appear here.
+        </p>
+
+      </div>
+
+    </div>
+  );
+}
 
 // ============================================================
 // BIRTHDAY ROW
@@ -451,22 +605,25 @@ function BirthdayRow({
       }`}
     >
 
-      {/* Avatar */}
+      {/* Profile */}
 
-      <div className="flex h-[39px] w-[39px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-gradient-to-br from-[#dce5ef] to-[#c3cddc] shadow-sm">
+      <div className="flex h-[39px] w-[39px] shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#eee9ff] shadow-sm">
 
-        <div className="relative mt-1">
-
-          <div className="mx-auto h-[12px] w-[12px] rounded-full bg-[#68748c]" />
-
-          <div className="mt-[-1px] h-[12px] w-[22px] rounded-t-[14px] bg-[#68748c]" />
-
-        </div>
+        {person.profilePhoto ? (
+          <img
+            src={person.profilePhoto}
+            alt={person.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span className="text-[12px] font-extrabold text-[#6338ef]">
+            {person.name?.charAt(0)}
+          </span>
+        )}
 
       </div>
 
-
-      {/* Name */}
+      {/* Name and date */}
 
       <div className="min-w-[105px] flex-1">
 
@@ -479,7 +636,6 @@ function BirthdayRow({
         </p>
 
       </div>
-
 
       {/* Days */}
 
@@ -502,32 +658,31 @@ function BirthdayRow({
 
       </div>
 
-
       {/* Message */}
 
       <p className="hidden min-w-[150px] flex-1 text-[8px] text-[#737e99] lg:block">
         {person.message}
       </p>
 
+      {/* WhatsApp Wish */}
 
-      {/* Wish */}
-
-      <button
+      <NavLink to="/dashboard/messages"
         type="button"
+        
         className="flex h-[28px] items-center gap-1 rounded-[7px] bg-[#dcf8eb] px-2.5 text-[8px] font-extrabold text-[#08ae76] transition hover:bg-[#c8f4df]"
       >
 
         <FaWhatsapp
           size={13}
           fill="#08ae76"
+          
         />
 
         <span className="hidden sm:inline">
           Wish
         </span>
 
-      </button>
-
+      </NavLink>
 
       {/* More */}
 
@@ -544,25 +699,135 @@ function BirthdayRow({
   );
 }
 
-
 // ============================================================
-// CALENDAR
+// LIVE CALENDAR
 // ============================================================
 
 function CalendarCard() {
-  const days = [
-    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-    ["31", "1", "2", "3", "4", "5", "6"],
-    ["7", "8", "9", "10", "11", "12", "13"],
-    ["14", "15", "16", "17", "18", "19", "20"],
-    ["21", "22", "23", "24", "25", "26", "27"],
-    ["28", "29", "30", "1", "2", "3", "4"],
+
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  const today = new Date();
+
+  const monthName = currentDate.toLocaleString("en-US", {
+    month: "long",
+  });
+
+  const weekDays = [
+    "Sun",
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat",
   ];
+
+  // First day of the month
+  const firstDay = new Date(
+    year,
+    month,
+    1
+  ).getDay();
+
+  // Number of days in current month
+  const daysInMonth = new Date(
+    year,
+    month + 1,
+    0
+  ).getDate();
+
+  // Number of days in previous month
+  const daysInPreviousMonth = new Date(
+    year,
+    month,
+    0
+  ).getDate();
+
+  const calendarDays = [];
+
+  // ==========================================================
+  // PREVIOUS MONTH DAYS
+  // ==========================================================
+
+  for (let i = firstDay - 1; i >= 0; i--) {
+
+    calendarDays.push({
+      day: daysInPreviousMonth - i,
+      currentMonth: false,
+    });
+
+  }
+
+  // ==========================================================
+  // CURRENT MONTH DAYS
+  // ==========================================================
+
+  for (let day = 1; day <= daysInMonth; day++) {
+
+    calendarDays.push({
+      day,
+      currentMonth: true,
+    });
+
+  }
+
+  // ==========================================================
+  // NEXT MONTH DAYS
+  // ==========================================================
+
+  let nextDay = 1;
+
+  while (calendarDays.length < 42) {
+
+    calendarDays.push({
+      day: nextDay,
+      currentMonth: false,
+    });
+
+    nextDay++;
+
+  }
+
+  // ==========================================================
+  // PREVIOUS MONTH
+  // ==========================================================
+
+  const handlePreviousMonth = () => {
+
+    setCurrentDate(
+      new Date(
+        year,
+        month - 1,
+        1
+      )
+    );
+
+  };
+
+  // ==========================================================
+  // NEXT MONTH
+  // ==========================================================
+
+  const handleNextMonth = () => {
+
+    setCurrentDate(
+      new Date(
+        year,
+        month + 1,
+        1
+      )
+    );
+
+  };
 
   return (
     <div className="rounded-[10px] border border-[#e5e7ef] bg-white p-3 shadow-[0_5px_20px_rgba(35,45,90,0.05)]">
 
-      {/* Calendar header */}
+      {/* Calendar Header */}
 
       <div className="mb-2 flex items-center justify-between">
 
@@ -574,38 +839,50 @@ function CalendarCard() {
           />
 
           <h2 className="text-[10px] font-extrabold text-[#20263f]">
-            September 2025
+            {monthName} {year}
           </h2>
 
         </div>
 
+        {/* Navigation */}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
 
-          <button type="button">
+          <button
+            type="button"
+            onClick={handlePreviousMonth}
+            className="rounded p-1 transition hover:bg-[#f1edff]"
+          >
+
             <ChevronLeft
               size={13}
               className="text-[#7a849d]"
             />
+
           </button>
 
-          <button type="button">
+          <button
+            type="button"
+            onClick={handleNextMonth}
+            className="rounded p-1 transition hover:bg-[#f1edff]"
+          >
+
             <ChevronRight
               size={13}
               className="text-[#7a849d]"
             />
+
           </button>
 
         </div>
 
       </div>
 
-
-      {/* Days */}
+      {/* Week Days */}
 
       <div className="grid grid-cols-7 gap-y-1 text-center">
 
-        {days[0].map((day) => (
+        {weekDays.map((day) => (
           <div
             key={day}
             className="py-1 text-[7px] font-extrabold text-[#7e879d]"
@@ -614,38 +891,47 @@ function CalendarCard() {
           </div>
         ))}
 
+        {/* Calendar Dates */}
 
-        {days
-          .slice(1)
-          .flat()
-          .map((day, index) => {
+        {calendarDays.map((item, index) => {
 
-            const isToday = day === "12";
-            const isBirthday = day === "15" || day === "25";
+          const isToday =
+            item.currentMonth &&
+            item.day === today.getDate() &&
+            month === today.getMonth() &&
+            year === today.getFullYear();
 
-            return (
-              <div
-                key={`${day}-${index}`}
-                className="flex items-center justify-center"
-              >
+          return (
+            <div
+              key={`${item.day}-${index}`}
+              className="flex items-center justify-center"
+            >
 
-                <span
-                  className={`flex h-[23px] w-[23px] items-center justify-center rounded-full text-[7px] font-semibold ${
-                    isToday
+              <span
+                className={`
+                  flex h-[23px] w-[23px]
+                  items-center justify-center
+                  rounded-full
+                  text-[7px]
+                  font-semibold
+                  transition
+
+                  ${
+                    !item.currentMonth
+                      ? "text-[#c4c9d5]"
+                      : isToday
                       ? "bg-[#6538ef] text-white shadow-[0_3px_8px_rgba(99,56,239,0.25)]"
-                      : isBirthday
-                      ? "bg-[#fff0d9] text-[#9a681b]"
-                      : day === "26"
-                      ? "bg-[#eee9ff] text-[#6338ef]"
-                      : "text-[#58627b]"
-                  }`}
-                >
-                  {day}
-                </span>
+                      : "text-[#58627b] hover:bg-[#eee9ff] hover:text-[#6338ef]"
+                  }
+                `}
+              >
+                {item.day}
+              </span>
 
-              </div>
-            );
-          })}
+            </div>
+          );
+
+        })}
 
       </div>
 
@@ -653,9 +939,8 @@ function CalendarCard() {
   );
 }
 
-
 // ============================================================
-// WEEK BIRTHDAY
+// UPCOMING THIS WEEK ITEM
 // ============================================================
 
 function WeekBirthday({
@@ -664,20 +949,25 @@ function WeekBirthday({
   return (
     <div className="flex items-center gap-2 border-b border-[#edf0f5] py-2 last:border-b-0">
 
-      {/* Avatar */}
+      {/* Profile */}
 
-      <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#dce5ef] to-[#c4cfde]">
+      <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#eee9ff]">
 
-        <div className="relative mt-1">
-
-          <div className="mx-auto h-[8px] w-[8px] rounded-full bg-[#68748c]" />
-
-          <div className="mt-[-1px] h-[9px] w-[16px] rounded-t-[10px] bg-[#68748c]" />
-
-        </div>
+        {person.profilePhoto ? (
+          <img
+            src={person.profilePhoto}
+            alt={person.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <span className="text-[9px] font-extrabold text-[#6338ef]">
+            {person.name?.charAt(0)}
+          </span>
+        )}
 
       </div>
 
+      {/* Name */}
 
       <div className="min-w-0 flex-1">
 
@@ -691,6 +981,7 @@ function WeekBirthday({
 
       </div>
 
+      {/* Days */}
 
       <span
         className={`whitespace-nowrap rounded-[5px] px-2 py-1 text-[7px] font-extrabold ${
@@ -705,6 +996,5 @@ function WeekBirthday({
     </div>
   );
 }
-
 
 export default UpcomingBirthdays;

@@ -4,6 +4,7 @@ const cors = require("cors");
 const connectDB = require("./config/db.js");
 const authRoutes = require('./routes/auth/authRoutes.js');
 const personRoutes = require("./routes/person/personRoutes");
+const messageRoutes = require("./routes/message/messageRoutes");
 const cookieParser = require("cookie-parser");
 dotenv.config();
 const app = express();
@@ -21,6 +22,7 @@ connectDB();
 
 app.use("/api/auth",authRoutes);
 app.use("/api",personRoutes);
+app.use("/api",messageRoutes);
 
 
 

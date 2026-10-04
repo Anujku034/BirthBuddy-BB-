@@ -1,4 +1,7 @@
-import React from "react";
+import React, { useContext, useEffect, useState } from "react";
+import axios from "axios";
+
+import { AuthContext } from "../../context/AuthContext";
 
 import {
   MessageSquareText,
@@ -12,77 +15,12 @@ import {
   ChevronRight,
   MoreVertical,
   CheckCheck,
-  FileText,
-  Eye,
   Gift,
 } from "lucide-react";
 
+import { useNavigate } from "react-router-dom";
+
 import messagesHero from "../../assets/dashboard/messagesHero.png";
-
-
-// ============================================================
-// STATIC DATA
-// ============================================================
-
-const messages = [
-  {
-    id: 1,
-    name: "Rahul Sharma",
-    phone: "+91 9876543210",
-    message: "Happy birthday, Rahul! 🎉",
-    date: "12 Sep 2025, 9:00 AM",
-    status: "Sent",
-  },
-  {
-    id: 2,
-    name: "Priya Singh",
-    phone: "+91 8765432109",
-    message: "Wishing you a wonderful year...",
-    date: "05 Sep 2025, 9:00 AM",
-    status: "Sent",
-  },
-  {
-    id: 3,
-    name: "Mom",
-    phone: "+91 9876543211",
-    message: "Happy birthday, Mom! ❤️",
-    date: "28 Aug 2025, 9:00 AM",
-    status: "Sent",
-  },
-  {
-    id: 4,
-    name: "Amit Verma",
-    phone: "+91 9123456780",
-    message: "Many happy returns of the day...",
-    date: "20 Aug 2025, 9:00 AM",
-    status: "Sent",
-  },
-  {
-    id: 5,
-    name: "Neha Sharma",
-    phone: "+91 8877665544",
-    message: "Happy birthday, Neha! 😊",
-    date: "15 Aug 2025, 9:00 AM",
-    status: "Sent",
-  },
-  {
-    id: 6,
-    name: "Vikram Gupta",
-    phone: "+91 7654321098",
-    message: "Have an amazing year ahead! 🎂",
-    date: "02 Aug 2025, 9:00 AM",
-    status: "Delivered",
-  },
-  {
-    id: 7,
-    name: "Saurav Mehta",
-    phone: "+91 9123004455",
-    message: "Stay happy and keep shining! ✨",
-    date: "12 Jul 2025, 9:00 AM",
-    status: "Failed",
-  },
-];
-
 
 // ============================================================
 // STATUS STYLES
@@ -92,17 +30,189 @@ const statusStyles = {
   Sent: "bg-[#dcf8eb] text-[#08ae76]",
   Delivered: "bg-[#e1f1ff] text-[#3182d8]",
   Failed: "bg-[#ffe3e9] text-[#ed4760]",
+  Pending: "bg-[#fff3e7] text-[#f07832]",
 };
-
 
 // ============================================================
 // MAIN COMPONENT
 // ============================================================
 
 function Messages() {
+  const [birthdays, setBirthdays] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Selected person from left list
+  const [selectedBirthday, setSelectedBirthday] = useState(null);
+
+  // Message input
+  const [messageText, setMessageText] = useState("");
+
+  const { accessToken, setAccessToken } = useContext(AuthContext);
+
+  const navigate = useNavigate();
+
+  // ============================================================
+  // GET TODAY'S BIRTHDAYS
+  // ============================================================
+
+  const getTodaysBirthdays = async () => {
+    try {
+      setLoading(true);
+
+      const response = await axios.get(
+        "http://localhost:3000/api/todays-birthdays",
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      setBirthdays(response.data.birthdays);
+
+      if (response.data.birthdays.length > 0) {
+        setSelectedBirthday((currentSelected) => {
+          if (!currentSelected) {
+            return response.data.birthdays[0];
+          }
+
+          const updatedSelected = response.data.birthdays.find(
+            (item) =>
+              item.person._id === currentSelected.person._id
+          );
+
+          return updatedSelected || response.data.birthdays[0];
+        });
+      } else {
+        setSelectedBirthday(null);
+      }
+    } catch (error) {
+      if (error.response?.status === 401) {
+        try {
+          // Refresh access token
+          const refreshResponse = await axios.post(
+            "http://localhost:3000/api/auth/refresh",
+            {},
+            {
+              withCredentials: true,
+            }
+          );
+
+          const newAccessToken =
+            refreshResponse.data.accessToken;
+
+          setAccessToken(newAccessToken);
+
+          // Retry original API
+          const retryResponse = await axios.get(
+            "http://localhost:3000/api/todays-birthdays",
+            {
+              headers: {
+                Authorization: `Bearer ${newAccessToken}`,
+              },
+            }
+          );
+
+          setBirthdays(retryResponse.data.birthdays);
+
+          if (retryResponse.data.birthdays.length > 0) {
+            setSelectedBirthday((currentSelected) => {
+              if (!currentSelected) {
+                return retryResponse.data.birthdays[0];
+              }
+
+              const updatedSelected =
+                retryResponse.data.birthdays.find(
+                  (item) =>
+                    item.person._id ===
+                    currentSelected.person._id
+                );
+
+              return (
+                updatedSelected ||
+                retryResponse.data.birthdays[0]
+              );
+            });
+          } else {
+            setSelectedBirthday(null);
+          }
+        } catch (refreshError) {
+          if (refreshError.response?.status === 401) {
+            alert("Session expired. Please login again.");
+
+            setTimeout(() => {
+              navigate("/login");
+            }, 2000);
+          }
+        }
+      } else {
+        console.error(
+          "GET TODAY'S BIRTHDAYS ERROR:",
+          error
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================================
+  // SEND BIRTHDAY MESSAGE
+  // ============================================================
+
+  const sendBirthdayMessage = async (personId, message) => {
+    try {
+      const response = await axios.post(
+        "http://localhost:3000/api/send-birthday-message",
+        {
+          personId,
+          message,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      alert(response.data.message);
+
+      setMessageText("");
+
+      // Refresh today's birthday list
+      getTodaysBirthdays();
+    } catch (error) {
+      console.error("SEND MESSAGE ERROR:", error);
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to send birthday message"
+      );
+    }
+  };
+
+  // ============================================================
+  // LOAD DATA
+  // ============================================================
+
+  useEffect(() => {
+    if (accessToken) {
+      getTodaysBirthdays();
+    }
+  }, [accessToken]);
+
+  useEffect(() => {
+    if (selectedBirthday?.status === "pending") {
+      setMessageText(
+        `Happy birthday, ${selectedBirthday.person.fullName}! 🎉`
+      );
+    } else {
+      setMessageText("");
+    }
+  }, [selectedBirthday]);
+
   return (
     <div className="min-h-screen bg-[#f7f8ff] px-3 py-4 sm:px-5 lg:px-7">
-
       <div className="mx-auto max-w-[1500px]">
 
         {/* =====================================================
@@ -111,19 +221,12 @@ function Messages() {
 
         <section className="relative mb-4 h-[150px] overflow-hidden rounded-[18px] border border-white bg-gradient-to-r from-[#faf8ff] via-[#f6efff] to-[#eee7ff] shadow-[0_8px_30px_rgba(73,45,150,0.07)]">
 
-          {/* Decorative glow */}
-
           <div className="absolute -left-16 -top-24 h-56 w-56 rounded-full bg-[#dfcaff]/40 blur-3xl" />
 
           <div className="absolute right-[30%] -top-20 h-52 w-52 rounded-full bg-[#f6d1ff]/40 blur-3xl" />
 
-
-          {/* Heading */}
-
           <div className="relative z-10 px-5 pt-5 sm:px-7">
-
             <div className="flex items-center gap-2">
-
               <h1 className="text-[27px] font-extrabold tracking-[-0.8px] text-[#101631] sm:text-[32px]">
                 Messages
               </h1>
@@ -133,28 +236,19 @@ function Messages() {
                 strokeWidth={2.4}
                 className="text-[#6338ef]"
               />
-
             </div>
 
             <p className="mt-0.5 text-[11px] font-medium text-[#78829c] sm:text-[13px]">
               View and manage all the birthday wishes you've sent.
             </p>
-
           </div>
-
-
-          {/* =================================================
-              HERO IMAGE
-          ================================================= */}
 
           <img
             src={messagesHero}
             alt="Birthday messages"
             className="pointer-events-none absolute bottom-[-12px] right-[3%] hidden h-[155px] w-auto object-contain md:block"
           />
-
         </section>
-
 
         {/* =====================================================
             STAT CARDS
@@ -196,24 +290,21 @@ function Messages() {
 
         </section>
 
-
         {/* =====================================================
             MAIN CONTENT
         ====================================================== */}
 
         <section className="grid grid-cols-1 gap-3 xl:grid-cols-[1.05fr_0.95fr]">
 
-
           {/* =================================================
               LEFT MESSAGE LIST
           ================================================= */}
 
-          <div className="overflow-hidden rounded-[11px] border border-[#e5e7ef] bg-white shadow-[0_5px_22px_rgba(35,45,90,0.05)]">
+          <div className="flex h-[520px] flex-col overflow-hidden rounded-[11px] border border-[#e5e7ef] bg-white shadow-[0_5px_22px_rgba(35,45,90,0.05)]">
 
             {/* Filters */}
 
-            <div className="border-b border-[#edf0f5] p-2">
-
+            <div className="shrink-0 border-b border-[#edf0f5] p-2">
               <div className="flex gap-2">
 
                 {/* Search */}
@@ -233,47 +324,80 @@ function Messages() {
 
                 </div>
 
-
                 {/* Time filter */}
 
                 <button
                   type="button"
                   className="flex h-[34px] min-w-[110px] items-center justify-between gap-2 rounded-[6px] border border-[#dfe2eb] px-3 text-[9px] font-semibold text-[#5d6781]"
                 >
-
                   <span className="flex items-center gap-1.5">
-
                     <CalendarDays size={13} />
-
                     All Time
-
                   </span>
 
                   <ChevronDown size={12} />
-
                 </button>
 
               </div>
-
             </div>
-
 
             {/* Messages */}
 
-            <div>
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
 
-              {messages.map((message, index) => (
-                <MessageListItem
-                  key={message.id}
-                  message={message}
-                  active={index === 0}
-                />
-              ))}
+              {loading ? (
+
+                <div className="px-4 py-8 text-center text-[10px] text-[#7c86a0]">
+                  Loading birthdays...
+                </div>
+
+              ) : birthdays.length === 0 ? (
+
+                <div className="px-4 py-8 text-center text-[10px] text-[#7c86a0]">
+                  No birthdays today.
+                </div>
+
+              ) : (
+
+                birthdays.map((item) => (
+                  <MessageListItem
+                    key={item.person._id}
+                    message={{
+                      id: item.person._id,
+                      name: item.person.fullName,
+                      date: "Today",
+
+                      message:
+                        item.status === "sent"
+                          ? "Birthday message sent"
+                          : "Birthday message pending",
+
+                      status:
+                        item.status === "sent"
+                          ? "Sent"
+                          : "Pending",
+
+                      // ADDED
+                      profilePhoto:
+                        item.person.profilePhoto,
+
+                      // ADDED
+                      phone: item.person.phone,
+                    }}
+                    active={
+                      selectedBirthday?.person._id ===
+                      item.person._id
+                    }
+                    onClick={() =>
+                      setSelectedBirthday(item)
+                    }
+                  />
+                ))
+
+              )}
 
             </div>
-
           </div>
-
 
           {/* =================================================
               RIGHT MESSAGE PREVIEW
@@ -287,27 +411,48 @@ function Messages() {
 
               <div className="flex items-center gap-3">
 
-                <ProfilePlaceholder />
+                {selectedBirthday?.person.profilePhoto ? (
+                  <img
+                    src={
+                      selectedBirthday.person.profilePhoto
+                    }
+                    alt={
+                      selectedBirthday.person.fullName
+                    }
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <ProfilePlaceholder />
+                )}
 
                 <div>
 
                   <h3 className="text-[11px] font-extrabold text-[#171c38]">
-                    Rahul Sharma
+                    {selectedBirthday?.person.fullName ||
+                      "Select a person"}
                   </h3>
 
                   <p className="text-[9px] text-[#77829c]">
-                    +91 9876543210
+                    {selectedBirthday?.person.phone ||
+                      "No phone number"}
                   </p>
 
                 </div>
 
               </div>
 
-
               <div className="flex items-center gap-2">
 
-                <span className="rounded-[6px] bg-[#dcf8eb] px-3 py-1.5 text-[8px] font-extrabold text-[#08ae76]">
-                  Sent
+                <span
+                  className={`rounded-[6px] px-3 py-1.5 text-[8px] font-extrabold ${
+                    selectedBirthday?.status === "sent"
+                      ? "bg-[#dcf8eb] text-[#08ae76]"
+                      : "bg-[#fff3e7] text-[#f07832]"
+                  }`}
+                >
+                  {selectedBirthday?.status === "sent"
+                    ? "Sent"
+                    : "Pending"}
                 </span>
 
                 <button type="button">
@@ -321,17 +466,25 @@ function Messages() {
 
             </div>
 
-
             {/* Date */}
 
             <div className="flex items-center justify-center border-b border-[#f0f1f6] py-2">
 
               <span className="rounded-full bg-[#f6f7fb] px-4 py-1 text-[8px] font-semibold text-[#7a849d]">
-                12 September 2025
+
+                {selectedBirthday
+                  ? new Date(
+                      selectedBirthday.person.dateOfBirth
+                    ).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "long",
+                      year: "numeric",
+                    })
+                  : "No birthday selected"}
+
               </span>
 
             </div>
-
 
             {/* Chat Area */}
 
@@ -343,49 +496,47 @@ function Messages() {
 
                 <div className="grid grid-cols-4 gap-10 p-8">
 
-                  {Array.from({ length: 20 }).map((_, index) => (
-                    <Gift
-                      key={index}
-                      size={28}
-                      className="text-[#6638ed]"
-                    />
-                  ))}
+                  {Array.from({ length: 20 }).map(
+                    (_, index) => (
+                      <Gift
+                        key={index}
+                        size={28}
+                        className="text-[#6638ed]"
+                      />
+                    )
+                  )}
 
                 </div>
 
               </div>
 
-
               {/* Message Bubble */}
 
               <div className="relative ml-auto max-w-[330px] rounded-[11px] rounded-tr-[3px] bg-gradient-to-br from-[#e5fff4] to-[#d9faed] px-4 py-3 shadow-sm">
 
-                <p className="text-[10px] font-medium leading-[17px] text-[#29354d]">
+                <p className="whitespace-pre-line text-[10px] font-medium leading-[17px] text-[#29354d]">
 
-                  Happy birthday, Rahul! 🎉
-
-                  <br />
-                  <br />
-
-                  Wishing you a year filled with happiness,
-                  success and amazing opportunities.
-
-                  <br />
-
-                  Keep shining! ✨
-
-                  <br />
-                  <br />
-
-                  Have a fantastic day! 🎂 ❤️
+                  {selectedBirthday?.message?.message ||
+                    `Happy birthday, ${
+                      selectedBirthday?.person
+                        .fullName || ""
+                    }! 🎉`}
 
                 </p>
-
 
                 <div className="mt-2 flex items-center justify-end gap-1">
 
                   <span className="text-[8px] text-[#78839a]">
-                    9:00 AM
+
+                    {selectedBirthday?.message?.sentAt
+                      ? new Date(
+                          selectedBirthday.message.sentAt
+                        ).toLocaleTimeString("en-IN", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "Not sent yet"}
+
                   </span>
 
                   <CheckCheck
@@ -399,72 +550,73 @@ function Messages() {
 
             </div>
 
-
             {/* =================================================
                 MESSAGE TEMPLATE
             ================================================= */}
 
             <div className="border-t border-[#e9ebf2] bg-white p-3">
 
-              <div className="mb-2 flex items-center justify-between">
-
-                <div className="flex items-center gap-1.5">
-
-                  <FileText
-                    size={14}
-                    className="text-[#6338ef]"
-                  />
-
-                  <span className="text-[10px] font-extrabold text-[#252b45]">
-                    Message Template
-                  </span>
-
-                </div>
-
-
-                <button
-                  type="button"
-                  className="flex items-center gap-1 text-[8px] font-bold text-[#6338ef]"
-                >
-
-                  <Eye size={11} />
-
-                  See All
-
-                </button>
-
-              </div>
-
-
               <div className="flex gap-2">
 
-                {/* Template */}
+                {/* Message Input */}
 
-                <button
-                  type="button"
-                  className="flex h-[36px] flex-1 items-center justify-between rounded-[6px] border border-[#dfe2eb] bg-white px-3 text-[9px] font-semibold text-[#59637d]"
-                >
-
-                  <span>
-                    Birthday Wishes 🎉
-                  </span>
-
-                  <ChevronDown size={12} />
-
-                </button>
-
+                <textarea
+                  value={messageText}
+                  onChange={(e) =>
+                    setMessageText(e.target.value)
+                  }
+                  rows={2}
+                  disabled={
+                    selectedBirthday?.status === "sent"
+                  }
+                  placeholder="Send your Best wishes to Close one"
+                  className="flex h-[50px] flex-1 resize-none rounded-[6px] border border-[#dfe2eb] bg-white px-3 py-2 text-[9px] font-semibold text-[#59637d] outline-none"
+                />
 
                 {/* Send */}
 
                 <button
                   type="button"
-                  className="flex h-[36px] items-center justify-center gap-2 rounded-[6px] bg-gradient-to-r from-[#6533ef] to-[#7c3fff] px-4 text-[9px] font-bold text-white shadow-[0_5px_12px_rgba(101,51,239,0.22)]"
+                  disabled={
+                    !selectedBirthday ||
+                    selectedBirthday.status === "sent"
+                  }
+                  onClick={() => {
+
+                    if (!selectedBirthday) {
+                      alert("Please select a birthday");
+                      return;
+                    }
+
+                    if (
+                      selectedBirthday.status === "sent"
+                    ) {
+                      alert(
+                        "Birthday message already sent"
+                      );
+                      return;
+                    }
+
+                    if (!messageText.trim()) {
+                      alert("Please enter a message");
+                      return;
+                    }
+
+                    sendBirthdayMessage(
+                      selectedBirthday.person._id,
+                      messageText
+                    );
+
+                  }}
+                  className={`flex h-[36px] items-center justify-center rounded-[6px] px-5 text-[9px] font-extrabold text-white ${
+                    selectedBirthday?.status === "sent"
+                      ? "cursor-not-allowed bg-gray-300"
+                      : "bg-[#6337ef] hover:bg-[#5428d8]"
+                  }`}
                 >
-
-                  <Send size={13} />
-
-                  Send Message on WhatsApp
-
+                  {selectedBirthday?.status === "sent"
+                    ? "Sent"
+                    : "Send"}
                 </button>
 
               </div>
@@ -476,11 +628,9 @@ function Messages() {
         </section>
 
       </div>
-
     </div>
   );
 }
-
 
 // ============================================================
 // STAT CARD
@@ -499,15 +649,12 @@ function StatCard({
       <div
         className={`flex h-[36px] w-[36px] shrink-0 items-center justify-center rounded-[9px] ${bg}`}
       >
-
         <Icon
           size={19}
           strokeWidth={2.5}
           className={color}
         />
-
       </div>
-
 
       <div>
 
@@ -525,7 +672,6 @@ function StatCard({
   );
 }
 
-
 // ============================================================
 // MESSAGE LIST ITEM
 // ============================================================
@@ -533,9 +679,11 @@ function StatCard({
 function MessageListItem({
   message,
   active,
+  onClick,
 }) {
   return (
     <div
+      onClick={onClick}
       className={`relative flex min-h-[57px] cursor-pointer items-center gap-2 border-b border-[#edf0f5] px-3 py-2 transition ${
         active
           ? "bg-[#f8f5ff]"
@@ -549,11 +697,17 @@ function MessageListItem({
         <div className="absolute bottom-0 left-0 top-0 w-[2px] bg-[#6638ee]" />
       )}
 
-
       {/* Profile */}
 
-      <ProfilePlaceholder />
-
+      {message.profilePhoto ? (
+        <img
+          src={message.profilePhoto}
+          alt={message.name}
+          className="h-[34px] w-[34px] shrink-0 rounded-full object-cover"
+        />
+      ) : (
+        <ProfilePlaceholder />
+      )}
 
       {/* Message details */}
 
@@ -571,11 +725,12 @@ function MessageListItem({
 
         </div>
 
-
         <div className="mt-1 flex items-center justify-between gap-2">
 
+          {/* PHONE NUMBER */}
+
           <p className="truncate text-[8px] font-medium text-[#7c86a0]">
-            {message.message}
+            {message.phone || "No phone number"}
           </p>
 
           <span
@@ -590,7 +745,6 @@ function MessageListItem({
 
       </div>
 
-
       <ChevronRight
         size={14}
         className="shrink-0 text-[#7c86a0]"
@@ -599,7 +753,6 @@ function MessageListItem({
     </div>
   );
 }
-
 
 // ============================================================
 // PROFILE PLACEHOLDER
@@ -620,6 +773,5 @@ function ProfilePlaceholder() {
     </div>
   );
 }
-
 
 export default Messages;

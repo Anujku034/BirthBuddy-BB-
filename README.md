@@ -123,3 +123,25 @@ Retry Request
 * Tested profile photo upload and retrieval successfully
 
 **Commit:** `integrate cloudinary image storage`
+
+## Day 6 — Birthday Messaging 🎂💬
+**Date:** October 4, 2026  
+**Commit:** `implement birthday messaging`
+
+- Created Message Schema with userId, personId, message, status, sentAt, and birthdayDate.
+- Added message status handling: pending, sent, delivered, and failed.
+- Implemented Today's Birthdays API to detect birthdays occurring today.
+- Added logic to show birthdays as **Pending** until a message is sent.
+- Added logic to keep the birthday as **Sent** after the message is sent.
+- Implemented Send Birthday Message API with duplicate-message prevention.
+- Connected the Messages page with the backend.
+- Added dynamic person name, phone number, profile photo, birthday date, and message status.
+- Added Cloudinary profile photos to the Messages page.
+- Added manual birthday message writing instead of automatically typing a message.
+- Added access-token refresh and retry handling when the access token expires.
+- Added session-expiry handling and login redirection.
+- Added scrollable birthday/message list.
+- Disabled message sending after the birthday message has already been sent.
+- Added validation for empty messages and unselected birthdays.
+
+**Git Commit:**

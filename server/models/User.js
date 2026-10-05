@@ -26,6 +26,7 @@ const UserSchema = new Schema({
     resetPasswordOtpExpire: {
         type: Date,
     },
+   
 
 });
 const User = mongoose.model("User", UserSchema);

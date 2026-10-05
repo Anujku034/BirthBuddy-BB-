@@ -145,3 +145,22 @@ Retry Request
 - Added validation for empty messages and unselected birthdays.
 
 **Git Commit:**
+
+## Day 7 — Automated Birthday Reminder System — Oct 5, 2026
+
+- Added dynamic **Reminder Time** settings.
+- Created `ReminderSettings` model to store each user's preferred reminder time.
+- Added APIs to fetch and update reminder settings.
+- Implemented automated birthday reminder scheduler using `node-cron`.
+- Scheduler checks users' saved reminder times every minute.
+- Added today's birthday detection.
+- Added WhatsApp connection verification before sending reminders.
+- Integrated Meta WhatsApp Cloud API through `whatsappService`.
+- Added `birthday_reminder` WhatsApp template integration.
+- Created `BirthdayReminderLog` to prevent duplicate birthday reminders.
+- Added successful/failed reminder handling.
+- Tested the complete scheduler flow with today's birthday.
+- Identified Meta authentication/template approval requirements for real WhatsApp delivery.
+- Prepared project for GitHub deployment.
+
+**Commit:** `implement automated birthday reminder system`

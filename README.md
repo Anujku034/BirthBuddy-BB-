@@ -164,3 +164,21 @@ Retry Request
 - Prepared project for GitHub deployment.
 
 **Commit:** `implement automated birthday reminder system`
+
+
+## Day 8 — Birthday Email Reminders & Session Restoration — Oct 6, 2026
+
+- Implemented automated birthday reminder emails using Nodemailer
+- Reused existing Gmail email service for birthday notifications
+- Added combined birthday email for multiple birthdays
+- Included each birthday person's name and WhatsApp number in the email
+- Connected birthday reminder emails with the scheduled reminder system
+- Added individual in-app birthday notifications
+- Prevented duplicate birthday emails using notification tracking
+- Added authentication session restoration after browser refresh
+- Restored access token and logged-in user using the refresh token
+- Added authentication loading state before rendering dashboard
+- Removed unused Web Push controller files
+
+### Commit
+`implement birthday email reminders and session restoration`

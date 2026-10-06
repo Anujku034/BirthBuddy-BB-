@@ -32,4 +32,58 @@ const sendResetPasswordOtp = async (email,otp) =>{
         `,
     });
 };
-module.exports = sendResetPasswordOtp;
+const sendBirthdayReminderEmail = async (
+    email,
+    userName,
+    birthdays
+) => {
+    const birthdayList = birthdays
+        .map(
+            (person) => `
+                <li style="margin-bottom: 12px;">
+                    🎂 <strong>${person.fullName}</strong>
+                    — 📱 ${person.phone || "No WhatsApp number"}
+                </li>
+            `
+        )
+        .join("");
+
+    await transporter.sendMail({
+        from: `"BirthBuddy" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject:
+            birthdays.length === 1
+                ? `🎂 ${birthdays[0].fullName}'s Birthday Today!`
+                : `🎂 ${birthdays.length} Birthdays Today!`,
+        html: `
+            <div style="
+                font-family: Arial, sans-serif;
+                max-width: 600px;
+                margin: auto;
+                padding: 20px;
+            ">
+                <h2>Hey ${userName} 👋</h2>
+
+                <p>
+                    Today is the birthday of:
+                </p>
+
+                <ul style="padding-left: 20px;">
+                    ${birthdayList}
+                </ul>
+
+                <p style="margin-top: 25px;">
+                    Don't forget to wish them! 🎉
+                </p>
+
+                <p style="margin-top: 30px;">
+                    — Team BirthBuddy
+                </p>
+            </div>
+        `,
+    });
+};
+
+
+
+module.exports = {sendResetPasswordOtp,sendBirthdayReminderEmail,};

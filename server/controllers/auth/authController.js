@@ -107,33 +107,48 @@ const loginUser = async (req, res) => {
     });
   }
 };
-const refreshAccessToken = async(req,res) => {
-  try{
+const refreshAccessToken = async (req, res) => {
+  try {
     const refreshToken = req.cookies.refreshToken;
-    if(!refreshToken){
+
+    if (!refreshToken) {
       return res.status(401).json({
-        message:"Refresh token not found",
+        message: "Refresh token not found",
       });
     }
+
     const decoded = jwt.verify(
       refreshToken,
       process.env.REFRESH_TOKEN_SECRET
     );
-    const newAccessToken = jwt.sign(
-      {userId: decoded.userId},
-      process.env.ACCESS_TOKEN_SECRET,
-      {expiresIn: "15m"}
 
-    )
+    const user = await User.findById(decoded.userId);
+
+    if (!user) {
+      return res.status(401).json({
+        message: "User not found",
+      });
+    }
+
+    const newAccessToken = jwt.sign(
+      { userId: user._id },
+      process.env.ACCESS_TOKEN_SECRET,
+      { expiresIn: "15m" }
+    );
+
     return res.status(200).json({
       accessToken: newAccessToken,
+      user: {
+        id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+      },
     });
-  }
-  catch(error){
+  } catch (error) {
+    console.error("REFRESH TOKEN ERROR:", error);
+
     return res.status(401).json({
       message: "Invalid or expired refresh token",
-      
-      
     });
   }
 };

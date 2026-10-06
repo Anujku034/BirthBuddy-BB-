@@ -411,13 +411,13 @@ function Settings() {
                 <option value="05:00">5:00 AM</option>
                 <option value="06:00">6:00 AM</option>
                 <option value="07:00">7:00 AM</option>
-                <option value="08:00">8:00 AM</option>
-                <option value="09:00">9:00 AM</option>
+                <option value="08:48">8:48 AM</option>
+                <option value="09:06">9:06 AM</option>
                 <option value="10:00">10:00 AM</option>
                 <option value="11:00">11:00 AM</option>
                 <option value="12:00">12:00 PM</option>
                 <option value="13:00">1:00 PM</option>
-                <option value="14:00">2:00 PM</option>
+                <option value="14:59">2:59 PM</option>
                 <option value="15:00">3:00 PM</option>
                 <option value="16:00">4:00 PM</option>
                 <option value="17:30">5:30 PM</option>

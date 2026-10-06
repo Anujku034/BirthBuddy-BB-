@@ -1,4 +1,4 @@
-import React,{useContext} from "react";
+import React,{useContext,useEffect} from "react";
 import {
   Search,
   Bell,
@@ -8,10 +8,11 @@ import {
 import { useNavigate } from "react-router-dom";
 import{Dropdown,DropdownItem} from 'flowbite-react';
 import {AuthContext} from "../../context/AuthContext.jsx";
+
 import axios from "axios";
 
 function DashboardNavbar() {
-  const { setAccessToken,user } = useContext(AuthContext);
+  const { accessToken,setAccessToken,user,notificationCount,getNotificationCount } = useContext(AuthContext);
   const navigate = useNavigate();
   const handleLogout = async() => {
     try{
@@ -38,10 +39,14 @@ function DashboardNavbar() {
     }
 
     return (
-      words[0].charAt(0) +" "+
-      words[words.length - 1].charAt(0)
+      words[0].charAt(0)
     ).toUpperCase();
   };
+  useEffect(() => {
+    if (notificationCount === undefined) return;
+
+    getNotificationCount();
+  }, [accessToken]);
   return (
     <header className="sticky top-0 z-40 h-[64px] border-b border-[#eceef5] bg-white/95 backdrop-blur-md">
 
@@ -78,6 +83,7 @@ function DashboardNavbar() {
 
           <button
             type="button"
+            onClick={() => navigate("/dashboard/notifications")}
             className="relative flex h-[35px] w-[35px] items-center justify-center rounded-full text-[#525d76] transition hover:bg-[#f4f1ff] hover:text-[#6338ef]"
           >
 
@@ -88,7 +94,11 @@ function DashboardNavbar() {
 
             {/* Notification dot */}
 
-            <span className="absolute right-[8px] top-[6px] h-[6px] w-[6px] rounded-full border-[1.5px] border-white bg-[#ef405b]" />
+           {notificationCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ef405b] px-1 text-[8px] font-bold text-white">
+                {notificationCount > 99 ? "99+" : notificationCount}
+              </span>
+            )}
 
           </button>
 

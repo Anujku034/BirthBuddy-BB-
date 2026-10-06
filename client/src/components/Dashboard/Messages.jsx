@@ -577,23 +577,10 @@ function Messages() {
 
                 <button
                   type="button"
-                  disabled={
-                    !selectedBirthday ||
-                    selectedBirthday.status === "sent"
-                  }
+                  disabled={!selectedBirthday}
                   onClick={() => {
-
                     if (!selectedBirthday) {
                       alert("Please select a birthday");
-                      return;
-                    }
-
-                    if (
-                      selectedBirthday.status === "sent"
-                    ) {
-                      alert(
-                        "Birthday message already sent"
-                      );
                       return;
                     }
 
@@ -602,21 +589,27 @@ function Messages() {
                       return;
                     }
 
-                    sendBirthdayMessage(
-                      selectedBirthday.person._id,
-                      messageText
-                    );
+                    const phone = selectedBirthday.person.phone;
 
+                    if (!phone) {
+                      alert("WhatsApp number is not available");
+                      return;
+                    }
+
+                    const whatsappUrl = `https://wa.me/${phone.replace(
+                      /\D/g,
+                      ""
+                    )}?text=${encodeURIComponent(messageText)}`;
+
+                    window.open(whatsappUrl, "_blank");
                   }}
                   className={`flex h-[36px] items-center justify-center rounded-[6px] px-5 text-[9px] font-extrabold text-white ${
-                    selectedBirthday?.status === "sent"
+                    !selectedBirthday
                       ? "cursor-not-allowed bg-gray-300"
                       : "bg-[#6337ef] hover:bg-[#5428d8]"
                   }`}
                 >
-                  {selectedBirthday?.status === "sent"
-                    ? "Sent"
-                    : "Send"}
+                  Wish on WhatsApp
                 </button>
 
               </div>

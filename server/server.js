@@ -8,6 +8,8 @@ const messageRoutes = require("./routes/message/messageRoutes");
 const whatsappRoutes = require("./routes/whatsapp/whatsappRoutes");
 const reminderRoutes = require("./routes/reminder/reminderRoutes");
 const startBirthdayReminderScheduler = require("./utils/birthdayReminderScheduler");
+const notificationRoutes = require("./routes/notification/notificationRoutes");
+const pushRoutes = require("./routes/push/pushRoutes");
 const cookieParser = require("cookie-parser");
 dotenv.config();
 const app = express();
@@ -29,6 +31,8 @@ app.use("/api",personRoutes);
 app.use("/api",messageRoutes);
 app.use("/api", whatsappRoutes);
 app.use("/api", reminderRoutes);
+app.use("/api", pushRoutes);
+app.use("/api", notificationRoutes);
 
 
 

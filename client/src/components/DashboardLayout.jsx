@@ -1,11 +1,19 @@
-import React from "react";
+import React, { useContext } from "react";
 import Sidebar from "./Dashboard/Sidebar.jsx";
 import Navbar from "./Dashboard/Navbar.jsx";
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext.jsx";
 
 function DashboardLayout() {
-  const location = useLocation();
-  const user = location.state?.user;
+  const { authLoading } = useContext(AuthContext);
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f7f8ff]">
@@ -17,17 +25,12 @@ function DashboardLayout() {
 
       {/* ================= NAVBAR ================= */}
       <header className="fixed left-0 right-0 top-0 z-40 lg:left-[278px]">
-        <Navbar  />
+        <Navbar />
       </header>
 
       {/* ================= MAIN CONTENT ================= */}
       <main className="min-h-screen pt-[64px] lg:ml-[278px]">
-
-        
-
-        {/* Dashboard pages */}
         <Outlet />
-
       </main>
 
     </div>

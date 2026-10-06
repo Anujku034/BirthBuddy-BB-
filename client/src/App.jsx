@@ -19,6 +19,7 @@ import ForgotPassword from "./pages/Auth/ForgotPassword";
 import VerifyOTP from "./pages/Auth/VerifyOTP";
 import ResetPassword from "./pages/Auth/ResetPassword";
 import PasswordResetSuccess from "./pages/Auth/PasswordResetSuccess";
+import Notifications from "./components/Dashboard/Notifications";
 function App() {
   return (
     <Routes>
@@ -38,6 +39,7 @@ function App() {
           <Route path="/dashboard/messages" element={<Message />} />
           <Route path="/dashboard/settings" element={<Settings />} />
           <Route path="/dashboard/upcoming-birthdays" element={<UpcomingBirthdays />} />
+          <Route path="/dashboard/notifications" element={<Notifications />} />
       </Route>
       <Route path="/forgot-password" element={<ForgotPassword/>}/>
       <Route  path = "/verify-otp" element={<VerifyOTP />}/>

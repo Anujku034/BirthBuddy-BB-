@@ -6,6 +6,13 @@ const sendBirthdayReminder = async ({
   birthdayPersonName,
 }) => {
   try {
+    console.log(
+      "TOKEN LOADED:",
+      process.env.WHATSAPP_ACCESS_TOKEN
+        ? process.env.WHATSAPP_ACCESS_TOKEN.slice(0, 10) + "..."
+        : "NO TOKEN"
+    );
+
     const url = `https://graph.facebook.com/${process.env.WHATSAPP_API_VERSION}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
 
     const response = await axios.post(
@@ -44,10 +51,7 @@ const sendBirthdayReminder = async ({
       }
     );
 
-    console.log(
-      "Birthday reminder sent successfully:",
-      response.data
-    );
+    console.log("Birthday reminder sent successfully:", response.data);
 
     return response.data;
   } catch (error) {
@@ -60,6 +64,4 @@ const sendBirthdayReminder = async ({
   }
 };
 
-module.exports = {
-  sendBirthdayReminder,
-};
+module.exports = { sendBirthdayReminder };

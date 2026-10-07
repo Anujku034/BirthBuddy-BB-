@@ -1,7 +1,7 @@
 const cron = require("node-cron");
 const ReminderSettings = require("../models/ReminderSettings");
 const Notification = require("../models/Notification");
-const Person = require("../models/person");
+const Person = require("../models/Person");
 const User = require("../models/User");
 
 const {

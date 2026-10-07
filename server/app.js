@@ -24,8 +24,8 @@ app.use(cookieParser());
 const allowedOrigins = [
   "http://localhost:5173",
   "https://birth-buddy-bb.vercel.app",
+  "https://birth-buddy-bb-iq66.vercel.app",
 ];
-
 app.use(
   cors({
     origin: (origin, callback) => {

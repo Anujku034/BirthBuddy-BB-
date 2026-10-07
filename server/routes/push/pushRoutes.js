@@ -1,17 +1,23 @@
 const express = require("express");
-
-const {
-  savePushSubscription,
-} = require("../../controllers/push/pushController");
+const router = express.Router();
 
 const authMiddleware = require("../../middleware/authMiddleware");
 
-const router = express.Router();
+const {
+  subscribeToPush,
+  sendPushNotification,
+} = require("../../controllers/push/pushController");
 
 router.post(
-  "/push-subscription",
+  "/subscribe",
   authMiddleware,
-  savePushSubscription
+  subscribeToPush
+);
+
+router.post(
+  "/send",
+  authMiddleware,
+  sendPushNotification
 );
 
 module.exports = router;

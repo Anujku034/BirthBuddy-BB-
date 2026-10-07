@@ -8,7 +8,7 @@ import {
 import axios from "axios";
 import BirthdayBuddyIcon from "../../assets/home/BirthdayBuddyIcon.png";
 import { useLocation,useNavigate } from "react-router-dom";
-
+import axiosInstance from "../../api/axiosInstance";
 const ResetPassword = () => {
   const location = useLocation();
   const email = location.state?.email;
@@ -82,8 +82,8 @@ const ResetPassword = () => {
     }
     // now i have to call the backend server
     try{
-      const response = await axios.post(
-        "http://localhost:3000/api/auth/reset-password",
+      const response = await axiosInstance.post(
+        "/auth/reset-password",
         {
           email:email,
           password:password,

@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Clock, Mail } from "lucide-react";
 
 import BirthdayBuddyIcon from "../../assets/home/BirthdayBuddyIcon.png";
 import { useLocation,useNavigate,NavLink } from "react-router-dom";
-
+import axiosInstance from "../../api/axiosInstance";
 const VerifyOTP = () => {
   const location = useLocation();
   const email = location.state?.email;
@@ -56,8 +56,8 @@ const VerifyOTP = () => {
     };
 
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/auth/verify-otp",
+      const response = await axiosInstance.post(
+        "/auth/verify-otp",
         data
       );
 
@@ -83,8 +83,8 @@ const VerifyOTP = () => {
     setInputError("");
     setServerError("");
     try{
-      const response = await axios.post(
-        "http://localhost:3000/api/auth/forgot-password",
+      const response = await axiosInstance.post(
+        "/auth/forgot-password",
         {
           email: email,
         }

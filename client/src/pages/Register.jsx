@@ -1,12 +1,15 @@
 import React, { useState } from "react";
-import { NavLink,useNavigate } from "react-router-dom";
-import axios from "axios";
 
+import { NavLink, useNavigate } from "react-router-dom";
+
+import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 import {
   User,
   Mail,
   Lock,
   Eye,
+  EyeOff,
   ArrowRight,
   Gift,
   CalendarDays,
@@ -16,6 +19,7 @@ import {
 
 const Register = () => {
   const navigate = useNavigate();
+
   // =========================
   // FORM STATES
   // =========================
@@ -25,6 +29,10 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [confirmpassword, setConfirmPassword] = useState("");
   const [ticked, setIsticked] = useState(false);
+
+  // Password visibility states
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // =========================
   // ERROR STATES
@@ -148,8 +156,8 @@ const Register = () => {
     // =========================
 
     try {
-      const response = await axios.post(
-        "http://localhost:3000/api/auth/register",
+      const response = await axiosInstance.post(
+        "/auth/register",
         {
           fullName: trimmedFullName,
           email: trimmedEmail,
@@ -159,16 +167,16 @@ const Register = () => {
       );
 
       console.log(response.data);
-      if(response.data.message){
+
+      if (response.data.message) {
         setSuccessMessage(
           response.data.message || "Registration successful!"
         );
-        setTimeout(() => {
-          navigate('/login');
-        },2000)
 
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
       }
-      
 
       // Clear form after successful registration
       setFullName("");
@@ -177,30 +185,29 @@ const Register = () => {
       setConfirmPassword("");
       setIsticked(false);
     } catch (error) {
-       const message = error.response?.data?.message;
+      const message = error.response?.data?.message;
 
-        if (message === "Email already registered") {
-          setServerError("Email already registered. Redirecting to login...");
-          setTimeout(() => {
-            navigate("/login");
-
-          },2000);
-          
-          return;
-        }
+      if (message === "Email already registered") {
         setServerError(
-          message || "Something went wrong. Please try again."
+          "Email already registered. Redirecting to login..."
         );
 
-        
-       
-    }
+        setTimeout(() => {
+          navigate("/login");
+        }, 2000);
 
-  
-};  
+        return;
+      }
+
+      setServerError(
+        message || "Something went wrong. Please try again."
+      );
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#fff7fb] via-white to-[#f1f5ff] flex items-center justify-center p-4 sm:p-6">
+
       {/* Main Container */}
       <div className="w-full max-w-7xl min-h-[700px] grid lg:grid-cols-2 overflow-hidden rounded-[32px] bg-white/70 backdrop-blur-xl shadow-[0_25px_80px_rgba(30,41,59,0.12)] border border-white">
 
@@ -247,14 +254,21 @@ const Register = () => {
             </p>
 
             <h2 className="text-5xl xl:text-6xl font-black leading-[1.05] tracking-tight text-slate-900">
+
               Celebrate
+
               <br />
+
               Every{" "}
+
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-500">
                 Special
               </span>
+
               <br />
+
               Moment
+
             </h2>
 
             <p className="mt-7 max-w-lg text-lg leading-8 text-slate-500">
@@ -327,6 +341,7 @@ const Register = () => {
               </div>
 
             </div>
+
           </div>
 
           {/* Bottom Quote */}
@@ -486,7 +501,7 @@ const Register = () => {
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
 
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Create a strong password"
                     value={password}
                     onChange={(e) => {
@@ -501,7 +516,22 @@ const Register = () => {
                     } bg-white text-slate-800 placeholder:text-slate-400 outline-none transition-all focus:ring-4`}
                   />
 
-                  <Eye className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 cursor-pointer hover:text-slate-600 transition" />
+                  {/* Eye Button */}
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
 
                 </div>
 
@@ -512,7 +542,6 @@ const Register = () => {
                 )}
 
               </div>
-                 
 
               {/* ================= CONFIRM PASSWORD ================= */}
 
@@ -527,7 +556,7 @@ const Register = () => {
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
 
                   <input
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
                     value={confirmpassword}
                     onChange={(e) => {
@@ -542,7 +571,26 @@ const Register = () => {
                     } bg-white text-slate-800 placeholder:text-slate-400 outline-none transition-all focus:ring-4`}
                   />
 
-                  <Eye className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 cursor-pointer hover:text-slate-600 transition" />
+                  {/* Eye Button */}
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() =>
+                      setShowConfirmPassword((prev) => !prev)
+                    }
+                    aria-label={
+                      showConfirmPassword
+                        ? "Hide confirm password"
+                        : "Show confirm password"
+                    }
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition"
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </button>
 
                 </div>
 

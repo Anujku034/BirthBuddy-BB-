@@ -4,6 +4,7 @@ import axios from 'axios';
 import {useNavigation} from 'react-router-dom';
 import BirthdayBuddyIcon from "../../assets/home/BirthdayBuddyIcon.png";
 import {NavLink,useNavigate} from "react-router-dom";
+import axiosInstance from "../../api/axiosInstance";
 const ForgotPassword = () => {
   const[email,setEmail] = useState("");
   const[emailError,setEmailError] = useState("");
@@ -23,8 +24,8 @@ const ForgotPassword = () => {
       setEmailError("");
       setServerError("");
       try{
-        const response = await axios.post(
-          "http://localhost:3000/api/auth/forgot-password",
+        const response = await axiosInstance.post(
+          "/auth/forgot-password",
           {email}
         );
 

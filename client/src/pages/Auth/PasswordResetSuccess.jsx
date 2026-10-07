@@ -3,6 +3,7 @@ import { ArrowRight, Check } from "lucide-react";
 
 import BirthdayBuddyIcon from "../../assets/home/BirthdayBuddyIcon.png";
 import {NavLink} from "react-router-dom";
+import axiosInstance from "../../api/axiosInstance";
 const PasswordResetSuccess = () => {
   return (
     <div

@@ -452,8 +452,6 @@ CLOUDINARY_API_KEY=your_cloudinary_key
 CLOUDINARY_API_SECRET=your_cloudinary_secret
 ```
 
-> ⚠️ Never commit `.env` files or sensitive credentials to GitHub.
-
 ---
 
 # 🚀 Run Locally
